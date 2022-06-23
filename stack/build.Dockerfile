@@ -2,6 +2,7 @@ FROM ubuntu:jammy
 
 ARG sources
 ARG packages
+ARG package_args='--no-install-recommends'
 
 RUN echo "$sources" > /etc/apt/sources.list
 
@@ -17,5 +18,5 @@ RUN echo "debconf debconf/frontend select noninteractive" | debconf-set-selectio
 
 RUN for path in /workspace /workspace/source-ws /workspace/source; do git config --system --add safe.directory "${path}"; done
 
-RUN curl -sL -o /usr/local/bin/yj https://github.com/sclevine/yj/releases/latest/download/yj-linux \
+RUN curl -sSfL -o /usr/local/bin/yj https://github.com/sclevine/yj/releases/latest/download/yj-linux-amd64 \
   && chmod +x /usr/local/bin/yj

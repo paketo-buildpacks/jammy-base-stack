@@ -50,7 +50,6 @@ platforms = ["linux/amd64"]
     """
 
     packages = """\
-    base-files \
     ca-certificates \
     libc6 \
     libexpat1 \
