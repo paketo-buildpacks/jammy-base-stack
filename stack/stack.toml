@@ -51,7 +51,6 @@ platforms = ["linux/amd64"]
 
     packages = """\
     ca-certificates \
-    libc6 \
     libexpat1 \
     libssl3 \
     libyaml-0-2 \
