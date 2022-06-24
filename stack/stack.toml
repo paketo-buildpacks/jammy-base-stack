@@ -1,0 +1,61 @@
+id = "io.buildpacks.stacks.jammy"
+homepage = "https://github.com/paketo-buildpacks/jammy-base-stack"
+maintainer = "Paketo Buildpacks"
+
+platforms = ["linux/amd64"]
+
+[build]
+  description = "ubuntu:jammy with compilers and shell utilities"
+  dockerfile = "./build.Dockerfile"
+  gid = 1000
+  shell = "/bin/bash"
+  uid = 1001
+
+  [build.args]
+    sources = """
+    deb http://archive.ubuntu.com/ubuntu jammy main
+    deb http://archive.ubuntu.com/ubuntu jammy-updates main
+    deb http://archive.ubuntu.com/ubuntu jammy-security main
+    """
+
+    packages = """\
+    build-essential \
+    ca-certificates \
+    curl \
+    git \
+    jq \
+    libexpat1 \
+    libgmp-dev \
+    libssl3 \
+    libyaml-0-2 \
+    netbase \
+    openssl \
+    tzdata \
+    xz-utils \
+    zlib1g-dev \
+    """
+
+[run]
+  description = "ubuntu:jammy with some common dependencies like tzdata and openssl"
+  dockerfile = "./run.Dockerfile"
+  gid = 1000
+  shell = "/bin/bash"
+  uid = 1002
+
+  [run.args]
+    sources = """
+    deb http://archive.ubuntu.com/ubuntu jammy main
+    deb http://archive.ubuntu.com/ubuntu jammy-updates main
+    deb http://archive.ubuntu.com/ubuntu jammy-security main
+    """
+
+    packages = """\
+    ca-certificates \
+    libexpat1 \
+    libssl3 \
+    libyaml-0-2 \
+    netbase \
+    openssl \
+    tzdata \
+    zlib1g \
+    """
