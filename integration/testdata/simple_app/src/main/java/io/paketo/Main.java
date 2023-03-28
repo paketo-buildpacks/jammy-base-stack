@@ -17,7 +17,7 @@ public class Main {
     server.createContext("/", new HttpHandler(){
         @Override
         public void handle(HttpExchange ex) throws IOException {
-            final String body = Runtime.version().toString();
+            final String body = "Hello World! Java version " + Runtime.version().toString();
 
             OutputStream out = ex.getResponseBody();
             ex.sendResponseHeaders(200, body.length());
