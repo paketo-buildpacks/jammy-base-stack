@@ -110,9 +110,9 @@ func testBuildpackIntegration(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	it("builds an app with a buildpack", func() {
-
 		var err error
 		var logs fmt.Stringer
+
 		image, logs, err = pack.WithNoColor().Build.
 			WithPullPolicy("if-not-present").
 			WithBuildpacks(
@@ -136,7 +136,7 @@ func testBuildpackIntegration(t *testing.T, context spec.G, it spec.S) {
 		Expect(err).NotTo(HaveOccurred())
 
 		Eventually(container).Should(BeAvailable())
-		Eventually(container).Should(Serve(ContainSubstring("11.0")).OnPort(8080))
+		Eventually(container).Should(Serve(ContainSubstring("Hello World! Java version")).OnPort(8080))
 	})
 }
 
