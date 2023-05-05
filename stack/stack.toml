@@ -27,6 +27,7 @@ platforms = ["linux/amd64"]
     libexpat1 \
     libgmp-dev \
     libssl3 \
+    libssl-dev \
     libyaml-0-2 \
     netbase \
     openssl \
