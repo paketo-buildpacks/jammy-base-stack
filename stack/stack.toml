@@ -31,6 +31,7 @@ platforms = ["linux/amd64"]
     libyaml-0-2 \
     netbase \
     openssl \
+    pkg-config \
     tzdata \
     xz-utils \
     zlib1g-dev \
