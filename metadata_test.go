@@ -116,6 +116,7 @@ func testMetadata(t *testing.T, context spec.G, it spec.S) {
 				ContainSubstring("Package: libyaml-0-2"),
 				ContainSubstring("Package: netbase"),
 				ContainSubstring("Package: openssl"),
+				ContainSubstring("Package: pkg-config"),
 				ContainSubstring("Package: tzdata"),
 				ContainSubstring("Package: xz-utils"),
 				ContainSubstring("Package: zlib1g-dev"),
