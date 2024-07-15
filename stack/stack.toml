@@ -35,6 +35,7 @@ platforms = ["linux/amd64"]
     tzdata \
     xz-utils \
     zlib1g-dev \
+    fontconfig
     """
 
 [run]
@@ -60,4 +61,5 @@ platforms = ["linux/amd64"]
     openssl \
     tzdata \
     zlib1g \
+    fontconfig
     """
