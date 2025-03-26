@@ -457,6 +457,7 @@ jobs:
         run_packages_removed_with_force: "/github/workspace/${{ env.RUN_DIFF_REMOVED_FILENAME }}"
         patched_usns: ${{ needs.poll_usns.outputs.usns }}
         release_body_file: "/github/workspace/release-body.md"
+        receipts_show_limit: 100
 
     - name: Setup Release Assets
       id: assets
