@@ -54,7 +54,7 @@ jobs:
         matrix=$(jq -n -c '[]')
 
         if [ -f ${{ env.STACKS_FILEPATH }} ]; then
-          pattern_image_registry_name=$(jq '.pattern_image_registry_name' ${{ env.STACKS_FILEPATH }})
+          pattern_image_registry_name=$(jq -r '.pattern_image_registry_name' ${{ env.STACKS_FILEPATH }})
           os_name=$(jq -r '.os_name' ${{ env.STACKS_FILEPATH }})
         else
           pattern_image_registry_name="build_image_run_image-os_codename-stack_type"
