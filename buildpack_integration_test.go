@@ -2,6 +2,7 @@ package acceptance_test
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,10 +13,18 @@ import (
 
 	. "github.com/onsi/gomega"
 
+	"github.com/google/go-containerregistry/pkg/authn"
+	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/google/go-containerregistry/pkg/v1/layout"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
+
 	"github.com/paketo-buildpacks/occam"
 	. "github.com/paketo-buildpacks/occam/matchers"
 	"github.com/paketo-buildpacks/packit/v2/pexec"
+	"github.com/paketo-buildpacks/packit/v2/vacation"
 )
+
+const REGISTRY_IMAGE = "registry:2"
 
 func testBuildpackIntegration(t *testing.T, context spec.G, it spec.S) {
 	var (
@@ -36,21 +45,29 @@ func testBuildpackIntegration(t *testing.T, context spec.G, it spec.S) {
 		builder string
 
 		image     occam.Image
+		registry  occam.Container
 		container occam.Container
 	)
 
 	it.Before(func() {
+		var err error
+
 		pack = occam.NewPack().WithVerbose()
 		docker = occam.NewDocker()
 
-		var err error
+		// A registry is needed in order to build and push the multi-arch stack images
+		registry, err = docker.Container.Run.
+			WithPublish(fmt.Sprintf("%d:5000", localRegistryPort)).
+			Execute(REGISTRY_IMAGE)
+		Expect(err).NotTo(HaveOccurred())
+
 		name, err = occam.RandomName()
 		Expect(err).NotTo(HaveOccurred())
 
-		mavenBuildpack = "gcr.io/paketo-buildpacks/maven"
-		jvmBuildpack = "gcr.io/paketo-buildpacks/sap-machine"
-		syftBuildpack = "gcr.io/paketo-buildpacks/syft"
-		executableJarBuildpack = "gcr.io/paketo-buildpacks/executable-jar"
+		mavenBuildpack = "index.docker.io/paketobuildpacks/maven"
+		jvmBuildpack = "index.docker.io/paketobuildpacks/sap-machine"
+		syftBuildpack = "index.docker.io/paketobuildpacks/syft"
+		executableJarBuildpack = "index.docker.io/paketobuildpacks/executable-jar"
 
 		source, err = occam.Source(filepath.Join("integration", "testdata", "simple_app"))
 		Expect(err).NotTo(HaveOccurred())
@@ -79,15 +96,22 @@ func testBuildpackIntegration(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	it.After(func() {
+		Expect(docker.Container.Remove.Execute(registry.ID)).To(Succeed())
 		Expect(docker.Container.Remove.Execute(container.ID)).To(Succeed())
 		Expect(docker.Image.Remove.Execute(image.ID)).To(Succeed())
 		Expect(docker.Volume.Remove.Execute(occam.CacheVolumeNames(name))).To(Succeed())
+
+		lifecycleVersion, err := getLifecycleVersion(builder)
+		Expect(err).NotTo(HaveOccurred())
 
 		Expect(docker.Image.Remove.Execute(builder)).To(Succeed())
 		Expect(os.RemoveAll(builderConfigFilepath)).To(Succeed())
 
 		Expect(docker.Image.Remove.Execute(stack.BuildImageID)).To(Succeed())
 		Expect(docker.Image.Remove.Execute(stack.RunImageID)).To(Succeed())
+		Expect(docker.Image.Remove.Execute(REGISTRY_IMAGE)).To(Succeed())
+
+		Expect(docker.Image.Remove.Execute(fmt.Sprintf("buildpacksio/lifecycle:%s", lifecycleVersion))).To(Succeed())
 
 		Expect(os.RemoveAll(source)).To(Succeed())
 	})
@@ -124,15 +148,34 @@ func testBuildpackIntegration(t *testing.T, context spec.G, it spec.S) {
 }
 
 func archiveToDaemon(path, id string) error {
-	skopeo := pexec.NewExecutable("skopeo")
+	tmpDir := os.TempDir()
 
-	return skopeo.Execute(pexec.Execution{
-		Args: []string{
-			"copy",
-			fmt.Sprintf("oci-archive://%s", path),
-			fmt.Sprintf("docker-daemon:%s:latest", id),
-		},
-	})
+	tarReader, err := os.Open(path)
+	if err != nil {
+		return fmt.Errorf("unable to open tar: %w", err)
+	}
+
+	err = vacation.NewTarArchive(tarReader).Decompress(tmpDir)
+	if err != nil {
+		return fmt.Errorf("unable to extract files: %w", err)
+	}
+
+	pathLayout, err := layout.FromPath(tmpDir)
+	if err != nil {
+		return fmt.Errorf("unable to load image from path %s: %w", tmpDir, err)
+	}
+
+	imageIndex, err := pathLayout.ImageIndex()
+	if err != nil {
+		return fmt.Errorf("unable to read image index: %w", err)
+	}
+
+	ref, err := name.ParseReference(id)
+	if err != nil {
+		return fmt.Errorf("unable to parse reference from %s: %w", id, err)
+	}
+
+	return remote.WriteIndex(ref, imageIndex, remote.WithAuthFromKeychain(authn.DefaultKeychain))
 }
 
 func createBuilder(config string, name string) (string, error) {
@@ -150,4 +193,39 @@ func createBuilder(config string, name string) (string, error) {
 		},
 	})
 	return buf.String(), err
+}
+
+type Builder struct {
+	LocalInfo struct {
+		Lifecycle struct {
+			Version string `json:"version"`
+		} `json:"lifecycle"`
+	} `json:"local_info"`
+}
+
+func getLifecycleVersion(builderID string) (string, error) {
+	buf := bytes.NewBuffer(nil)
+	pack := pexec.NewExecutable("pack")
+	err := pack.Execute(pexec.Execution{
+		Stdout: buf,
+		Stderr: buf,
+		Args: []string{
+			"builder",
+			"inspect",
+			builderID,
+			"-o",
+			"json",
+		},
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	var builder Builder
+	err = json.Unmarshal((buf.Bytes()), &builder)
+	if err != nil {
+		return "", err
+	}
+	return builder.LocalInfo.Lifecycle.Version, nil
 }
