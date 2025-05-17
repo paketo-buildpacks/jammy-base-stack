@@ -152,7 +152,11 @@ function receipts::generate::multi::arch() {
         fileName=$(basename ${runOutput})
       fi
 
-      imageReceipt="${dir}/${imageArch}-${fileName}"
+      if [ $imageArch = "amd64" ]; then
+        imageReceipt="${dir}/${fileName}"
+      else
+        imageReceipt="${dir}/${imageArch}-${fileName}"
+      fi
 
       util::print::info "Generating CycloneDX package SBOM using syft for $archiveName on platform linux/$imageArch saved as $imageReceipt"
 
