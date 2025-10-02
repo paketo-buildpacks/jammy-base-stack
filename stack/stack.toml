@@ -30,10 +30,13 @@ platforms = ["linux/amd64", "linux/arm64"]
     libgmp-dev \
     libssl3 \
     libssl-dev \
+    libpython3-stdlib \
+    libpython3.10 \
     libyaml-0-2 \
     netbase \
     openssl \
     pkg-config \
+    python3 \
     tzdata \
     xz-utils \
     zlib1g-dev \
