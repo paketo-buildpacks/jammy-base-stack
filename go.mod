@@ -1,6 +1,6 @@
 module github.com/paketo-buildpacks/jammy-base-stack
 
-go 1.25.6
+go 1.25.7
 
 require (
 	github.com/google/go-containerregistry v0.8.1-0.20220209165246-a44adc326839
