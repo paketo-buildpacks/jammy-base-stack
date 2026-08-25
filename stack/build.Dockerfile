@@ -1,4 +1,5 @@
 FROM ubuntu:jammy
+LABEL org.opencontainers.image.source="https://github.com/paketo-buildpacks/jammy-base-stack"
 
 ARG sources
 ARG packages
